@@ -83,10 +83,11 @@ const getElements = (path) => {
     });
 };
 
-const layersSetup = (layersOrder) => {
+const layersSetup = (layersOrder, gender) => {
   const layers = layersOrder.map((layerObj, index) => ({
     id: index,
-    elements: getElements(`${layersDir}/${layerObj.name}/`),
+    elements: getElements(`${layersDir}/${layerObj.name}/${gender.name}/`),
+	gender: gender,
     name:
       layerObj.options?.["displayName"] != undefined
         ? layerObj.options?.["displayName"]
@@ -104,6 +105,12 @@ const layersSetup = (layersOrder) => {
         ? layerObj.options?.["bypassDNA"]
         : false,
   }));
+
+  //push gender into traits
+//   layers.push({
+
+//   })
+
   return layers;
 };
 
@@ -136,7 +143,7 @@ const addMetadata = (_dna, _edition) => {
     date: dateTime,
     ...extraMetadata,
     attributes: attributesList,
-    compiler: "HashLips Art Engine",
+    compiler: "HashLips Art Engine - gender modifier by bnardus",
   };
   if (network == NETWORK.sol) {
     tempMetadata = {
@@ -178,8 +185,12 @@ const addAttributes = (_element) => {
 
 const loadLayerImg = async (_layer) => {
   return new Promise(async (resolve) => {
-    const image = await loadImage(`${_layer.selectedElement.path}`);
-    resolve({ layer: _layer, loadedImage: image });
+	  try {
+		  const image = await loadImage(`${_layer.selectedElement.path}`);
+		  resolve({ layer: _layer, loadedImage: image });
+	  } catch (err) {
+		  console.log(_layer)
+	  }
   });
 };
 
@@ -219,6 +230,7 @@ const constructLayerToDna = (_dna = "", _layers = []) => {
     );
     return {
       name: layer.name,
+	  gender: layer.gender,
       blend: layer.blend,
       opacity: layer.opacity,
       selectedElement: selectedElement,
@@ -346,9 +358,44 @@ const startCreating = async () => {
     ? console.log("Editions left to create: ", abstractedIndexes)
     : null;
   while (layerConfigIndex < layerConfigurations.length) {
+
+	//gender selection setup
+	let genders = [
+		{
+			name: "Male",
+			rarity: 0.4,
+		},
+		{
+			name: "Female",
+			rarity: 0.4,
+		},
+		// {
+		// 	name: "X",
+		// 	rarity: 0.2,
+		// },
+	];
+
+	//roll for gender
+	// let max = 0.4;
+	// let min = 0;
+	// let diceRoll = (Math.random() * (max - min) + min).toFixed(1);
+	// // let diceRoll = Math.random();
+
+	// let gender = shuffle(genders.filter(g => {
+	// 	return g.rarity >= diceRoll;
+	// }))[0];
+	let gender = genders.filter(g => {
+		return g.name == layerConfigurations[layerConfigIndex].gender;
+	})[0];
+	//end Genders selection setup
+
+	// console.log(diceRoll, gender);
+
     const layers = layersSetup(
-      layerConfigurations[layerConfigIndex].layersOrder
+      layerConfigurations[layerConfigIndex].layersOrder,
+	  gender
     );
+
     while (
       editionCount <= layerConfigurations[layerConfigIndex].growEditionSizeTo
     ) {
@@ -378,6 +425,13 @@ const startCreating = async () => {
           if (background.generate) {
             drawBackground();
           }
+		  
+			//push gender to attributes list
+			attributesList.push({
+				trait_type: "Gender",
+				value: gender.name
+			});
+
           renderObjectArray.forEach((renderObject, index) => {
             drawElement(
               renderObject,
