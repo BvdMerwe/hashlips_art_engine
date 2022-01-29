@@ -189,7 +189,7 @@ const loadLayerImg = async (_layer) => {
 		  const image = await loadImage(`${_layer.selectedElement.path}`);
 		  resolve({ layer: _layer, loadedImage: image });
 	  } catch (err) {
-		//   console.log(_layer)
+		  console.log(err)
 	  }
   });
 };
